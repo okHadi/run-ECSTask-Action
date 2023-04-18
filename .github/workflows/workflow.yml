@@ -28,4 +28,4 @@ jobs:
         env:
           SUBNET_ID: ${{ steps.extract_subnet_id.outputs.subnet_id }}
           GROUP_ID: ${{ steps.extract_group_id.outputs.group_id }}
-        run: aws ecs run-task --cluster k6TFCluster --task-definition k6TF --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$GROUP_ID]},assignPublicIp=ENABLED}"
+        run: aws ecs run-task --cluster k6TFCluster --task-definition k6TF --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$GROUP_ID],assignPublicIp=ENABLED}"
