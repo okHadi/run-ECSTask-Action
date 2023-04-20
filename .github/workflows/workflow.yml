@@ -16,51 +16,48 @@ jobs:
       - name: Get commit history
         id: get_commit_history
         run: |
-          git fetch
-          git diff-tree --no-commit-id --name-only -r --root HEAD
-          git log --stat -1 --oneline
-      #     echo $(git log --stat -1 --oneline) > log.txt
-      #     if grep -q "test.js" log.txt; then
-      #       echo "::set-output name=testChanged::1"
-      #     else
-      #       echo "::set-output name=testChanged::0"
-      #     fi
+          echo $(git log --stat -1 --oneline) > log.txt
+          if grep -q "test.js" log.txt; then
+            echo "::set-output name=testChanged::1"
+          else
+            echo "::set-output name=testChanged::0"
+          fi
 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: "ap-northeast-1"
-      # - name: Configure ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "ap-northeast-1"
+      - name: Configure ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      # - name: Build, tag, and push the image to Amazon ECR
-      #   if: ${{ steps.get_commit_history.outputs.testChanged }} == 1
-      #   id: build-image
-      #   env:
-      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
-      #     IMAGE_TAG: latest
-      #   run: |
-      #     echo ${{ steps.get_commit_history.outputs.testChanged }}
-      #     # Build a docker container and push it to ECR
-      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-      #     echo "Pushing image to ECR..."
-      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      #     echo "name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Build, tag, and push the image to Amazon ECR
+        if: ${{ steps.get_commit_history.outputs.testChanged }} == 1
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+          IMAGE_TAG: latest
+        run: |
+          echo ${{ steps.get_commit_history.outputs.testChanged }}
+          # Build a docker container and push it to ECR
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "Pushing image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # - name: Extract subnet_id
-      #   id: extract_subnet_id
-      #   run: echo "::set-output name=subnet_id::$(aws ec2 describe-subnets --query 'Subnets[0].SubnetId' --output text)"
+      - name: Extract subnet_id
+        id: extract_subnet_id
+        run: echo "::set-output name=subnet_id::$(aws ec2 describe-subnets --query 'Subnets[0].SubnetId' --output text)"
 
-      # - name: Extract group_id
-      #   id: extract_group_id
-      #   run: echo "::set-output name=group_id::$(aws ec2 describe-security-groups --query 'SecurityGroups[0].GroupId' --output text)"
+      - name: Extract group_id
+        id: extract_group_id
+        run: echo "::set-output name=group_id::$(aws ec2 describe-security-groups --query 'SecurityGroups[0].GroupId' --output text)"
 
-      # - name: Run ECS task
-      #   env:
-      #     SUBNET_ID: ${{ steps.extract_subnet_id.outputs.subnet_id }}
-      #     GROUP_ID: ${{ steps.extract_group_id.outputs.group_id }}
-      #   run: aws ecs run-task --cluster k6TFCluster --task-definition k6TF --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$GROUP_ID],assignPublicIp=ENABLED}"
+      - name: Run ECS task
+        env:
+          SUBNET_ID: ${{ steps.extract_subnet_id.outputs.subnet_id }}
+          GROUP_ID: ${{ steps.extract_group_id.outputs.group_id }}
+        run: aws ecs run-task --cluster k6TFCluster --task-definition k6TF --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$GROUP_ID],assignPublicIp=ENABLED}"
