@@ -15,6 +15,7 @@ jobs:
         id: get_commit_history
         run: |
           git fetch
+          git diff-tree --no-commit-id --name-only -r --root HEAD
           git log --stat -1 --oneline
       #     echo $(git log --stat -1 --oneline) > log.txt
       #     if grep -q "test.js" log.txt; then
