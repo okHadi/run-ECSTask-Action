@@ -1,7 +1,5 @@
 name: Run ECS task
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
